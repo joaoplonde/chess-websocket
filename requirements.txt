@@ -1,0 +1,4 @@
+websockets
+python-chess
+python-dotenv
+firebase-admin
