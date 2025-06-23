@@ -24,18 +24,17 @@ let myPlayerId = null;       // ID única deste jogador (gerada localmente)
 let myGameId = "mychessgame"; // ID da sala do jogo (por padrão)
 let myPlayerColor = null;    // Cor atribuída a este jogador pelo servidor ('white' ou 'black')
 let gameStatusFromServer = "waiting"; // Armazena o status do jogo vindo do servidor
-let isBoardFlipped = false;  // Novo: Controla se o tabuleiro deve ser invertido para o jogador
+let isBoardFlipped = false;  // Controla se o tabuleiro deve ser invertido para o jogador
 
-// --- Mapeamento de Símbolos de Peças para Caminhos de Imagem ---
+// --- Mapeamento de Símbolos de Peças para Caminhos de Imagem (ATUALIZADO COM /static/) ---
 const PIECE_IMAGE_PATHS = {
-    'r': 'images/black_r.png', 'n': 'images/black_n.png', 'b': 'images/black_b.png',
-    'q': 'images/black_q.png', 'k': 'images/black_k.png', 'p': 'images/black_p.png',
-    'R': 'images/white_r.png', 'N': 'images/white_n.png', 'B': 'images/white_b.png',
-    'Q': 'images/white_q.png', 'K': 'images/white_k.png', 'P': 'images/white_p.png',
+    'r': '/static/images/black_r.png', 'n': '/static/images/black_n.png', 'b': '/static/images/black_b.png',
+    'q': '/static/images/black_q.png', 'k': '/static/images/black_k.png', 'p': '/static/images/black_p.png',
+    'R': '/static/images/white_r.png', 'N': '/static/images/white_n.png', 'B': '/static/images/white_b.png',
+    'Q': '/static/images/white_q.png', 'K': '/static/images/white_k.png', 'P': '/static/images/white_p.png',
 };
 
-// --- Objeto para Funções Auxiliares de Conversão de Coordenadas ---
-// Estas funções agora consideram se o tabuleiro está invertido (isBoardFlipped)
+// --- Objeto para Funções Auxiliares de Conversão de Coordenadas (COM LÓGICA DE INVERSÃO) ---
 const utils = {
     // Converte coordenadas de pixel do mouse para a notação de casa (ex: (0,0) -> 'a8')
     getSquareFromCoords: function(x, y) {
@@ -74,33 +73,6 @@ const utils = {
     }
 };
 
-// --- Função Assíncrona para Carregar Todas as Imagens das Peças ---
-async function loadPieceImages() {
-    const imagePromises = [];
-    for (const symbol in PIECE_IMAGE_PATHS) {
-        const path = PIECE_IMAGE_PATHS[symbol];
-        const img = new Image();
-        img.src = path;
-        const promise = new Promise((resolve, reject) => {
-            img.onload = () => {
-                pieceImages[symbol] = img;
-                resolve();
-            };
-            img.onerror = () => {
-                console.error(`Erro ao carregar imagem: ${path}. Verifique o caminho e o nome do arquivo.`);
-                reject(new Error(`Falha ao carregar imagem: ${path}`));
-            };
-        });
-        imagePromises.push(promise);
-    }
-    try {
-        await Promise.all(imagePromises);
-    } catch (error) {
-        console.error("Não foi possível carregar todas as imagens devido a erros:", error);
-        throw error;
-    }
-}
-
 // --- Funções de Desenho ---
 function drawGame() {
     ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
@@ -109,7 +81,6 @@ function drawGame() {
     drawPieces();
 }
 
-// ATUALIZAÇÃO: drawBoard agora considera isBoardFlipped
 function drawBoard() {
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
@@ -128,7 +99,6 @@ function drawBoard() {
     }
 }
 
-// ATUALIZAÇÃO: drawHighlights agora usa as funções atualizadas do utils
 function drawHighlights() {
     if (selectedSquare) {
         const coords = utils.getCoordsFromSquareName(selectedSquare);
@@ -147,14 +117,10 @@ function drawHighlights() {
     }
 }
 
-// ATUALIZAÇÃO: drawPieces agora usa as funções atualizadas do utils
 function drawPieces() {
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             // Obtenha o nome da casa na notação padrão (a8-h1)
-            // A lógica de `getSquareFromCoords` deve ser usada para mapear o loop 0-7 para 'a8'-'h1'
-            // O getSquareFromCoords no utils já inverte, então aqui não precisamos inverter col/row
-            // Queremos o nome da casa REAL do tabuleiro para gameBoard.get()
             const squareName = String.fromCharCode('a'.charCodeAt(0) + col) + (8 - row);
             
             const piece = gameBoard.get(squareName);
@@ -220,8 +186,6 @@ async function handleMouseDown(event) {
 
             const piece = gameBoard.get(selectedSquare);
             if (piece && piece.type === 'p') {
-                // Determine a fileira de promoção com base na cor do jogador e na orientação do tabuleiro
-                // Se o tabuleiro estiver invertido, a fileira 8 para brancas é a row 0, e a fileira 1 para pretas é a row 7.
                 const targetRankForPromotion = (myPlayerColor === 'white') ? 8 : 1;
                 const clickedRank = parseInt(clickedSquare[1]);
 
@@ -340,8 +304,7 @@ function setupActionButtons() {
                     player_id: myPlayerId,
                     color: myPlayerColor
                 }
-            }
-            ));
+            }));
             alert("Você propôs um empate.");
         }
     });
@@ -412,7 +375,7 @@ async function initFrontend() {
     canvas.addEventListener('mousedown', handleMouseDown);
 }
 
-// --- Função para Conectar ao Servidor WebSocket ---
+// --- Função para Conectar ao Servidor WebSocket (ATUALIZADA COM URL DO RENDER) ---
 function connectWebSocket() {
     if (websocket) {
         if (websocket.readyState === WebSocket.OPEN) {
@@ -424,6 +387,7 @@ function connectWebSocket() {
         }
     }
 
+    // ATENÇÃO: Use a URL do seu serviço Render aqui, com "wss://" e "/ws"
     websocket = new WebSocket("wss://chess-websocket-1-hi9e.onrender.com/ws");
 
     websocket.onopen = function(event) {
@@ -447,8 +411,7 @@ function connectWebSocket() {
         switch (message.type) {
             case "player_color":
                 myPlayerColor = message.color;
-                // ATUALIZAÇÃO: Inverte o tabuleiro se o jogador for PRETAS
-                isBoardFlipped = (myPlayerColor === 'black');
+                isBoardFlipped = (myPlayerColor === 'black'); // Inverte o tabuleiro se o jogador for PRETAS
                 document.getElementById('playerColorDisplay').textContent = `Você é: ${myPlayerColor.toUpperCase()}`;
                 console.log(`Você foi atribuído como jogador ${myPlayerColor.toUpperCase()}. Tabuleiro invertido: ${isBoardFlipped}`);
                 drawGame(); // Redesenha para aplicar a orientação correta assim que a cor é atribuída
@@ -513,7 +476,7 @@ function connectWebSocket() {
     websocket.onerror = function(event) {
         console.error("Erro no WebSocket:", event);
         document.getElementById('connectionStatus').textContent = 'Status da Conexão: Erro!';
-        document.getElementById('connectionStatus').classList.remove('bg-green-100', 'text-green-800');
+        document.getElementById('connectionStatus').classList.remove('bg-green-100', 'text-red-800');
         document.getElementById('connectionStatus').classList.add('bg-red-100', 'text-red-800');
         gameStatusFromServer = "error"; 
     };

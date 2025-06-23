@@ -264,8 +264,16 @@ async def websocket_handler(request):
 async def main():
     app = web.Application()
 
-    # Serve arquivos estáticos da pasta 'static'
-    app.router.add_static('/', path='./static', name='static_files')
+    # Adiciona uma rota para a raiz que serve o index.html
+    async def index_handler(request):
+        return web.FileResponse('./static/index.html')
+    
+    app.router.add_get('/', index_handler)
+
+    # Serve arquivos estáticos da pasta 'static' para todos os outros caminhos
+    # Note que a ordem importa: a rota '/' deve vir antes da rota estática mais genérica
+    app.router.add_static('/static', path='./static', name='static_files') # Mudado para '/static'
+
 
     # Adiciona a rota para as conexões WebSocket
     app.router.add_get('/ws', websocket_handler) # Os clientes conectarão em ws://SEU_URL_DO_RENDER/ws
