@@ -5,7 +5,7 @@ import websockets
 import json
 import collections
 import logging
-import os
+import os # Importe a biblioteca os
 from dotenv import load_dotenv # Para carregar variáveis de ambiente do arquivo .env
 import chess # Importa a biblioteca python-chess
 
@@ -167,15 +167,13 @@ async def handle_make_move(websocket, message_data):
 
 
         if chess_move in board.legal_moves:
-            # OBTER O SAN ANTES DE FAZER O PUSH!
             san_move = board.san(chess_move)
             
-            board.push(chess_move) # Executa o movimento no tabuleiro
+            board.push(chess_move) 
             
             logging.info(f"Movimento legal feito no jogo {game_id}: {san_move}")
-            game["move_history"].append(san_move) # Usa a variável san_move
+            game["move_history"].append(san_move) 
 
-            # Transmite o novo estado do jogo para todos os jogadores
             await broadcast_game_state(game_id, "game_state", {
                 "fen": board.fen(),
                 "turn": board.turn, 
@@ -279,8 +277,11 @@ async def handler(websocket):
 
 # --- Função Principal para Iniciar o Servidor ---
 async def main():
-    logging.info("Servidor WebSocket iniciando na porta 8765...")
-    async with websockets.serve(handler, "0.0.0.0", 8765): 
+    # Obtém a porta do ambiente (Render define a variável PORT)
+    # Se não estiver no Render, usa 8765 como fallback para testes locais
+    port = int(os.environ.get("PORT", 8765)) 
+    logging.info(f"Servidor WebSocket iniciando na porta {port}...")
+    async with websockets.serve(handler, "0.0.0.0", port): # Usa a porta dinâmica aqui
         await asyncio.Future()  
 
 if __name__ == "__main__":
