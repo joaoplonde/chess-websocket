@@ -424,7 +424,7 @@ function connectWebSocket() {
         }
     }
 
-    websocket = new WebSocket("ws://localhost:8765");
+    websocket = new WebSocket("wss://chess-websocket-1-hi9e.onrender.com/ws");
 
     websocket.onopen = function(event) {
         console.log("Conectado ao servidor WebSocket.");
