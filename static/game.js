@@ -73,6 +73,33 @@ const utils = {
     }
 };
 
+// --- Função Assíncrona para Carregar Todas as Imagens das Peças ---
+async function loadPieceImages() {
+    const imagePromises = [];
+    for (const symbol in PIECE_IMAGE_PATHS) {
+        const path = PIECE_IMAGE_PATHS[symbol];
+        const img = new Image();
+        img.src = path;
+        const promise = new Promise((resolve, reject) => {
+            img.onload = () => {
+                pieceImages[symbol] = img;
+                resolve();
+            };
+            img.onerror = () => {
+                console.error(`Erro ao carregar imagem: ${path}. Verifique o caminho e o nome do arquivo.`);
+                reject(new Error(`Falha ao carregar imagem: ${path}`));
+            };
+        });
+        imagePromises.push(promise);
+    }
+    try {
+        await Promise.all(imagePromises);
+    } catch (error) {
+        console.error("Não foi possível carregar todas as imagens devido a erros:", error);
+        throw error;
+    }
+}
+
 // --- Funções de Desenho ---
 function drawGame() {
     ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
@@ -387,7 +414,8 @@ function connectWebSocket() {
         }
     }
 
-    // ATENÇÃO: Use a URL do seu serviço Render aqui, com "wss://" e "/ws"
+    // ATENÇÃO: Use a URL do seu serviço Render aqui, com "wss://" e "/ws" no final.
+    // Esta URL foi fornecida por você: https://chess-websocket-1-hi9e.onrender.com
     websocket = new WebSocket("wss://chess-websocket-1-hi9e.onrender.com/ws");
 
     websocket.onopen = function(event) {

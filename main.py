@@ -271,8 +271,8 @@ async def main():
     app.router.add_get('/', index_handler)
 
     # Serve arquivos estáticos da pasta 'static' para todos os outros caminhos
-    # Note que a ordem importa: a rota '/' deve vir antes da rota estática mais genérica
-    app.router.add_static('/static', path='./static', name='static_files') # Mudado para '/static'
+    # Agora acessíveis via /static/nome_do_arquivo
+    app.router.add_static('/static', path='./static', name='static_files')
 
 
     # Adiciona a rota para as conexões WebSocket
